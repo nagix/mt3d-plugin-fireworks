@@ -1,4 +1,4 @@
-import {Plugin, THREE, ThreeLayer} from 'mini-tokyo-3d';
+import {THREE} from 'mini-tokyo-3d';
 import fireworksSVG from './fireworks.svg';
 
 const {
@@ -590,15 +590,31 @@ class RichFireWorks extends BasicFireWorks {
 
 }
 
-class FireworksLayer extends ThreeLayer {
+class FireworksLayer {
 
-    constructor(id) {
-        super(id);
+    constructor(options) {
+        const me = this;
 
-        this.fireworksInstances = {};
+        me.id = options.id;
+        me.type = 'three';
+        me.fireworksInstances = {};
+
+        const repeat = () => {
+            me.tick();
+            requestAnimationFrame(repeat);
+        };
+
+        repeat();
     }
 
-    render(gl, matrix) {
+    onAdd(map, context) {
+        const me = this;
+
+        me.map = map;
+        me.scene = context.scene;
+    }
+
+    tick() {
         const {fireworksInstances, scene} = this;
 
         for (const key of Object.keys(fireworksInstances)) {
@@ -641,8 +657,6 @@ class FireworksLayer extends ThreeLayer {
                 }
             }
         }
-
-        super.render(gl, matrix);
     }
 
     launchFireWorks(key, lngLat) {
@@ -658,8 +672,8 @@ class FireworksLayer extends ThreeLayer {
             return;
         }
 
-        const modelPosition = me.getModelPosition(lngLat);
-        const modelScale = me.getModelScale();
+        const modelPosition = map.getModelPosition(lngLat);
+        const modelScale = map.getModelScale();
         const scale = Math.pow(2, 17 - clamp(map.getZoom(), 14, 16)) * modelScale;
         const position = {
             x: modelPosition.x + (Math.random() * 400 - 200) * modelScale,
@@ -673,13 +687,9 @@ class FireworksLayer extends ThreeLayer {
 
 }
 
-class FireworksPlugin extends Plugin {
+class FireworksPlugin {
 
-    constructor(options) {
-        super(Object.assign({
-            viewModes: ['ground']
-        }, options));
-
+    constructor() {
         const me = this;
 
         me.id = 'fireworks';
@@ -696,8 +706,9 @@ class FireworksPlugin extends Plugin {
             backgroundSize: '32px',
             backgroundImage: `url("${fireworksSVG}")`
         };
-        me._layer = new FireworksLayer(me.id);
-        me._plans = [{
+        me.viewModes = ['ground'];
+        me.layer = new FireworksLayer({id: me.id});
+        me.plans = [{
             // Sumidagawa 1 (2020-07-23 19:00 to 20:30)
             coord: [139.8061467, 35.7168468],
             start: 1595498400000,
@@ -751,39 +762,42 @@ class FireworksPlugin extends Plugin {
     }
 
     onAdd(map) {
-        map.map.addLayer(this._layer, 'poi');
+        const me = this;
+
+        me.map = map;
+        map.addLayer(me.layer);
     }
 
     onRemove(map) {
-        map.map.removeLayer(this._layer);
+        map.removeLayer(this.id);
     }
 
     onEnabled() {
         const me = this;
 
-        me._interval = setInterval(() => {
-            const now = me._map.clock.getTime();
+        me.interval = setInterval(() => {
+            const now = me.map.clock.getTime();
 
-            me._plans.forEach((plan, index) => {
+            me.plans.forEach((plan, index) => {
                 if (now >= plan.start && now < plan.end && Math.random() > 0.7) {
-                    me._layer.launchFireWorks(index, plan.coord);
+                    me.layer.launchFireWorks(index, plan.coord);
                 }
             });
         }, 100);
     }
 
     onDisabled() {
-        clearInterval(this._interval);
+        clearInterval(this.interval);
     }
 
     onVisibilityChanged(visible) {
         const me = this;
 
-        me._map.map.setLayoutProperty(me.id, 'visibility', visible ? 'visible' : 'none');
+        me.map.setLayerVisibility(me.id, visible ? 'visible' : 'none');
     }
 
 }
 
-export default function(options) {
-    return new FireworksPlugin(options);
+export default function() {
+    return new FireworksPlugin();
 }
