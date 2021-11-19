@@ -597,6 +597,7 @@ class FireworksLayer {
 
         me.id = options.id;
         me.type = 'three';
+        me.lightColor = 'white';
         me.fireworksInstances = {};
 
         const repeat = () => {
