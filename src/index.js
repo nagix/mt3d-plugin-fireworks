@@ -759,6 +759,12 @@ class FireworksPlugin {
             coord: [139.7161639, 35.6759322],
             start: 1628420400000,
             end: 1628431200000
+        }, {
+            // Disney Light the Night (Everyday 20:00 to 20:05)
+            coord: [139.8848537, 35.6307327],
+            start: 39600000,
+            end: 39900000,
+            daily: true
         }];
     }
 
@@ -780,7 +786,8 @@ class FireworksPlugin {
             const now = me.map.clock.getTime();
 
             me.plans.forEach((plan, index) => {
-                if (now >= plan.start && now < plan.end && Math.random() > 0.7) {
+                if ((plan.daily && now % 86400000 >= plan.start && now % 86400000 < plan.end ||
+                    !plan.daily && now >= plan.start && now < plan.end) && Math.random() > 0.7) {
                     me.layer.launchFireWorks(index, plan.coord);
                 }
             });
