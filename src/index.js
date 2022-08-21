@@ -699,6 +699,7 @@ class FireworksPlugin {
             ja: '花火',
             ko: '불꽃놀이',
             ne: 'आतिशबाजी',
+            pt: 'Fogos de artifício',
             th: 'ดอกไม้ไฟ',
             'zh-Hans': '烟花',
             'zh-Hant': '煙花'
