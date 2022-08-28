@@ -1,6 +1,6 @@
 {
   "name": "mt3d-plugin-fireworks",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Fireworks plugin for Mini Tokyo 3D",
   "main": "dist/mt3d-plugin-fireworks.js",
   "module": "dist/mt3d-plugin-fireworks.esm.js",
@@ -10,7 +10,7 @@
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^13.3.0",
     "@rollup/plugin-strip": "^2.1.0",
-    "eslint": "^8.22.0",
+    "eslint": "^8.23.0",
     "eslint-config-mourner": "^3.0.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-jsdoc": "^39.3.6",
