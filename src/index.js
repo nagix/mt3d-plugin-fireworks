@@ -8,7 +8,7 @@ const {
     Float32BufferAttribute,
     FloatType,
     Group,
-    Math: ThreeMath,
+    MathUtils,
     Points,
     RawShaderMaterial,
     Texture,
@@ -349,7 +349,7 @@ class BasicFireWorks {
         this.life = 150;
         this.seed = this.getSeed();
         this.meshGroup.add(this.seed.mesh);
-        this.flowerSizeRate = ThreeMath.mapLinear(this.petalsNum, min, max, 0.4, 0.7);
+        this.flowerSizeRate = MathUtils.mapLinear(this.petalsNum, min, max, 0.4, 0.7);
     }
 
     getSeed() {
@@ -391,8 +391,8 @@ class BasicFireWorks {
             for (let i = 0; i < num; i++) {
                 radius = getRandomNum(120, 60) * 0.01 * this.scale;
 
-                const theta = ThreeMath.degToRad(Math.random() * 180);
-                const phi = ThreeMath.degToRad(Math.random() * 360);
+                const theta = MathUtils.degToRad(Math.random() * 180);
+                const phi = MathUtils.degToRad(Math.random() * 360);
                 const vx = Math.sin(theta) * Math.cos(phi) * radius;
                 const vy = Math.sin(theta) * Math.sin(phi) * radius;
                 const vz = Math.cos(theta) * radius;
@@ -409,10 +409,10 @@ class BasicFireWorks {
 
             radius = getRandomNum(120, 60) * 0.01 * this.scale;
             for (let i = 0; i < num; i++) {
-                const sphereRate = Math.sin(ThreeMath.degToRad(zStep * i));
-                const vz = Math.cos(ThreeMath.degToRad(zStep * i)) * radius;
-                const vx = Math.cos(ThreeMath.degToRad(xStep * i)) * sphereRate * radius;
-                const vy = Math.sin(ThreeMath.degToRad(yStep * i)) * sphereRate * radius;
+                const sphereRate = Math.sin(MathUtils.degToRad(zStep * i));
+                const vz = Math.cos(MathUtils.degToRad(zStep * i)) * radius;
+                const vx = Math.cos(MathUtils.degToRad(xStep * i)) * sphereRate * radius;
+                const vy = Math.sin(MathUtils.degToRad(yStep * i)) * sphereRate * radius;
                 const vel = new Vector3(vx, vy, vz);
                 vel.multiplyScalar(this.flowerSizeRate);
                 vels.push(vel);
@@ -486,7 +486,7 @@ class RichFireWorks extends BasicFireWorks {
         const min = 100;
 
         this.petalsNum = getRandomNum(max, min);
-        this.flowerSizeRate = ThreeMath.mapLinear(this.petalsNum, min, max, 0.4, 0.7);
+        this.flowerSizeRate = MathUtils.mapLinear(this.petalsNum, min, max, 0.4, 0.7);
         this.tailMeshGroup = new Group();
         this.tails = [];
     }
