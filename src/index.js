@@ -206,7 +206,7 @@ class ParticleMesh {
         this.mesh = getPointMesh(num, vels, type);
     }
 
-    update(gravity) {
+    update(gravity, frameRateFactor) {
         if (this.timerStartFading > 0) {
             this.timerStartFading -= 0.3;
         }
@@ -218,18 +218,18 @@ class ParticleMesh {
         for (let i = 0; i < this.particleNum; i++) {
             const {x, y, z} = getOffsetXYZ(i);
 
-            velocity.array[z] += gravity.z - mass.array[i] * this.scale;
-            velocity.array[x] *= friction;
-            velocity.array[y] *= friction;
-            velocity.array[z] *= friction;
-            position.array[x] += velocity.array[x];
-            position.array[y] += velocity.array[y];
-            position.array[z] += velocity.array[z];
+            velocity.array[z] += gravity.z - mass.array[i] * this.scale * frameRateFactor;
+            velocity.array[x] *= 1 - ((1 - friction) * frameRateFactor);
+            velocity.array[y] *= 1 - ((1 - friction) * frameRateFactor);
+            velocity.array[z] *= 1 - ((1 - friction) * frameRateFactor);
+            position.array[x] += velocity.array[x] * frameRateFactor;
+            position.array[y] += velocity.array[y] * frameRateFactor;
+            position.array[z] += velocity.array[z] * frameRateFactor;
 
             const {a} = getOffsetRGBA(i);
 
             if (this.timerStartFading <= 0) {
-                color.array[a] *= decrementRandom() - decrementByVel(color.array[a]);
+                color.array[a] *= 1 - ((1 - (decrementRandom() - decrementByVel(color.array[a]))) * frameRateFactor);
                 if (color.array[a] < 0.001) {
                     color.array[a] = 0;
                 }
@@ -253,24 +253,24 @@ class ParticleSeedMesh extends ParticleMesh {
         super(scale, num, vels, 'seed');
     }
 
-    update(gravity) {
+    update(gravity, frameRateFactor) {
         const {position, velocity, color, mass} = this.mesh.geometry.attributes;
         const decrementRandom = () => (Math.random() > 0.3 ? 0.99 : 0.96);
         const decrementByVel = v => (Math.random() > 0.3 ? 0 : (1 - v) * 0.1);
-        const shake = () => (Math.random() > 0.5 ? 0.05 : -0.05) * this.scale;
+        const shake = () => (Math.random() > 0.5 ? 0.05 : -0.05) * this.scale * frameRateFactor;
         const dice = () => Math.random() > 0.1;
         const _f = friction * 0.98;
 
         for (let i = 0; i < this.particleNum; i++) {
             const {x, y, z} = getOffsetXYZ(i);
 
-            velocity.array[z] += gravity.z - mass.array[i] * this.scale;
-            velocity.array[x] *= _f;
-            velocity.array[y] *= _f;
-            velocity.array[z] *= _f;
-            position.array[x] += velocity.array[x];
-            position.array[y] += velocity.array[y];
-            position.array[z] += velocity.array[z];
+            velocity.array[z] += gravity.z - mass.array[i] * this.scale * frameRateFactor;
+            velocity.array[x] *= 1 - ((1 - _f) * frameRateFactor);
+            velocity.array[y] *= 1 - ((1 - _f) * frameRateFactor);
+            velocity.array[z] *= 1 - ((1 - _f) * frameRateFactor);
+            position.array[x] += velocity.array[x] * frameRateFactor;
+            position.array[y] += velocity.array[y] * frameRateFactor;
+            position.array[z] += velocity.array[z] * frameRateFactor;
             if (dice()) {
                 position.array[x] += shake();
             }
@@ -280,7 +280,7 @@ class ParticleSeedMesh extends ParticleMesh {
 
             const {a} = getOffsetRGBA(i);
 
-            color.array[a] *= decrementRandom() - decrementByVel(color.array[a]);
+            color.array[a] *= 1 - ((1 - (decrementRandom() - decrementByVel(color.array[a]))) * frameRateFactor);
             if (color.array[a] < 0.001) {
                 color.array[a] = 0;
             }
@@ -298,22 +298,22 @@ class ParticleTailMesh extends ParticleMesh {
         super(scale, num, vels, 'trail');
     }
 
-    update(gravity) {
+    update(gravity, frameRateFactor) {
         const {position, velocity, color, mass} = this.mesh.geometry.attributes;
         const decrementRandom = () => (Math.random() > 0.3 ? 0.98 : 0.95);
-        const shake = () => (Math.random() > 0.5 ? 0.05 : -0.05) * this.scale;
+        const shake = () => (Math.random() > 0.5 ? 0.05 : -0.05) * this.scale * frameRateFactor;
         const dice = () => Math.random() > 0.2;
 
         for (let i = 0; i < this.particleNum; i++) {
             const {x, y, z} = getOffsetXYZ(i);
 
-            velocity.array[z] += gravity.z - mass.array[i] * this.scale;
-            velocity.array[x] *= friction;
-            velocity.array[y] *= friction;
-            velocity.array[z] *= friction;
-            position.array[x] += velocity.array[x];
-            position.array[y] += velocity.array[y];
-            position.array[z] += velocity.array[z];
+            velocity.array[z] += gravity.z - mass.array[i] * this.scale * frameRateFactor;
+            velocity.array[x] *= 1 - ((1 - friction) * frameRateFactor);
+            velocity.array[y] *= 1 - ((1 - friction) * frameRateFactor);
+            velocity.array[z] *= 1 - ((1 - friction) * frameRateFactor);
+            position.array[x] += velocity.array[x] * frameRateFactor;
+            position.array[y] += velocity.array[y] * frameRateFactor;
+            position.array[z] += velocity.array[z] * frameRateFactor;
             if (dice()) {
                 position.array[x] += shake();
             }
@@ -323,7 +323,7 @@ class ParticleTailMesh extends ParticleMesh {
 
             const {a} = getOffsetRGBA(i);
 
-            color.array[a] *= decrementRandom();
+            color.array[a] *= 1 - ((1 - decrementRandom()) * frameRateFactor);
             if (color.array[a] < 0.001) {
                 color.array[a] = 0;
             }
@@ -425,19 +425,19 @@ class BasicFireWorks {
         return particleMesh;
     }
 
-    update() {
+    update(frameRateFactor) {
         if (!this.isExplode) {
-            this.drawTail();
+            this.drawTail(frameRateFactor);
         } else {
-            this.flower.update(this.gravity);
+            this.flower.update(this.gravity, frameRateFactor);
             if (this.life > 0) {
-                this.life -= 1;
+                this.life -= 1 * frameRateFactor;
             }
         }
     }
 
-    drawTail() {
-        this.seed.update(this.gravity);
+    drawTail(frameRateFactor) {
+        this.seed.update(this.gravity, frameRateFactor);
         const {position, velocity} = this.seed.mesh.geometry.attributes;
         let count = 0;
         let isComplete = true;
@@ -544,17 +544,17 @@ class RichFireWorks extends BasicFireWorks {
         return tails;
     }
 
-    update() {
+    update(frameRateFactor) {
         if (!this.isExplode) {
-            this.drawTail();
+            this.drawTail(frameRateFactor);
         } else {
-            this.flower.update(this.gravity);
+            this.flower.update(this.gravity, frameRateFactor);
 
             const {position: flowerGeometory} = this.flower.mesh.geometry.attributes;
 
             for (let i = 0, l = this.tails.length; i < l; i++) {
                 const tail = this.tails[i];
-                tail.update(this.gravity);
+                tail.update(this.gravity, frameRateFactor);
                 const {x, y, z} = getOffsetXYZ(i);
                 const flowerPos = new Vector3(
                     flowerGeometory.array[x],
@@ -574,7 +574,7 @@ class RichFireWorks extends BasicFireWorks {
                     const steer = desiredVelocity.sub(tailVel);
 
                     steer.normalize();
-                    steer.multiplyScalar(Math.random() * 0.0003 * this.life * this.scale);
+                    steer.multiplyScalar(Math.random() * 0.0003 * this.life * this.scale * frameRateFactor);
                     velocity.array[x] += steer.x;
                     velocity.array[y] += steer.y;
                     velocity.array[z] += steer.z;
@@ -583,7 +583,7 @@ class RichFireWorks extends BasicFireWorks {
             }
 
             if (this.life > 0) {
-                this.life -= 1.2;
+                this.life -= 1.2 * frameRateFactor;
             }
         }
     }
@@ -594,6 +594,7 @@ class FireworksLayer {
 
     constructor(options) {
         const me = this;
+        let lastTick = performance.now();
 
         me.id = options.id;
         me.type = 'three';
@@ -601,7 +602,10 @@ class FireworksLayer {
         me.fireworksInstances = {};
 
         const repeat = () => {
-            me.tick();
+            const now = performance.now();
+
+            me.tick((now - lastTick) / (1000 / 60));
+            lastTick = now;
             requestAnimationFrame(repeat);
         };
 
@@ -615,7 +619,7 @@ class FireworksLayer {
         me.scene = context.scene;
     }
 
-    tick() {
+    tick(frameRateFactor) {
         const {fireworksInstances, scene} = this;
 
         for (const key of Object.keys(fireworksInstances)) {
@@ -625,7 +629,7 @@ class FireworksLayer {
             for (let i = instances.length - 1; i >= 0; i--) {
                 const instance = instances[i];
 
-                instance.update();
+                instance.update(frameRateFactor);
                 if (instance.isExplode) {
                     exploadedIndexList.push(i);
                 }
