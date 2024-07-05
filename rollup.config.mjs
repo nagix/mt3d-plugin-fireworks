@@ -4,6 +4,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import image from '@rollup/plugin-image';
 import terser from '@rollup/plugin-terser';
 import strip from '@rollup/plugin-strip';
+import {createFilter} from '@rollup/pluginutils';
 
 const pkg = JSON.parse(fs.readFileSync('package.json'));
 const banner = `/*!
@@ -12,6 +13,29 @@ const banner = `/*!
  * (c) 2021-${new Date().getFullYear()} ${pkg.author}
  * Released under the ${pkg.license} license
  */`;
+
+const glsl = () => {
+	const filter = createFilter('**/*.glsl');
+	return {
+		name: 'glsl',
+		transform: (code, id) => {
+			if (!filter(id)) {
+				return;
+			}
+			code = code.trim()
+				.replace(/\s*\/\/[^\n]*\n/g, '\n')
+				.replace(/\n+/g, '\n')
+				.replace(/\n\s+/g, '\n')
+				.replace(/\s?([+-\/*=,])\s?/g, '$1')
+				.replace(/([;,\{\}])\n(?=[^#])/g, '$1');
+
+			return {
+				code: `export default ${JSON.stringify(code)};`,
+				map: {mappings: ''}
+			};
+		}
+	};
+};
 
 export default [{
 	input: 'src/index.js',
@@ -33,7 +57,8 @@ export default [{
 			preferBuiltins: false
 		}),
 		commonjs(),
-		image()
+		image(),
+		glsl()
 	]
 }, {
 	input: 'src/index.js',
@@ -56,6 +81,7 @@ export default [{
 		}),
 		commonjs(),
 		image(),
+		glsl(),
 		terser({
 			compress: {
 				pure_getters: true
@@ -80,6 +106,7 @@ export default [{
 			preferBuiltins: false
 		}),
 		commonjs(),
-		image()
+		image(),
+		glsl()
 	]
 }];

@@ -10,6 +10,7 @@
     "@rollup/plugin-node-resolve": "^15.0.2",
     "@rollup/plugin-strip": "^3.0.2",
     "@rollup/plugin-terser": "^0.4.1",
+    "@rollup/pluginutils": "^5.1.0",
     "eslint": "^8.38.0",
     "eslint-config-mourner": "^3.0.0",
     "eslint-plugin-import": "^2.27.5",

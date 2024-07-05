@@ -1,4 +1,6 @@
 import {THREE} from 'mini-tokyo-3d';
+import vertexShader from './vertex-shader.glsl';
+import fragmentShader from './fragment-shader.glsl';
 import fireworksSVG from './fireworks.svg';
 
 const {
@@ -165,33 +167,8 @@ const getPointMesh = (num, vels, type) => {
         // Therefore, it is necessary to make it false in the case of making the image transparent by blending.
         depthWrite: false,
         blending: AdditiveBlending,
-        vertexShader: `
-            precision highp float;
-            attribute vec3 position;
-            uniform mat4 projectionMatrix;
-            uniform mat4 modelViewMatrix;
-            uniform float size;
-            attribute float adjustSize;
-            uniform vec3 cameraPosition;
-            attribute vec3 velocity;
-            attribute vec4 color;
-            varying vec4 vColor;
-            void main() {
-                vColor = color;
-                vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
-                gl_PointSize = size * adjustSize * (100.0 / length(modelViewPosition.xyz));
-                gl_Position = projectionMatrix * modelViewPosition;
-            }
-        `,
-        fragmentShader: `
-            precision mediump float;
-            uniform sampler2D texture;
-            varying vec4 vColor;
-            void main() {
-                vec4 color = vec4(texture2D(texture, gl_PointCoord));
-                gl_FragColor = color * vColor;
-            }
-        `
+        vertexShader,
+        fragmentShader
     });
 
     return new Points(bufferGeometry, shaderMaterial);
