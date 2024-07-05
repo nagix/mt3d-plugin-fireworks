@@ -677,6 +677,7 @@ class FireworksPlugin {
         me.id = 'fireworks';
         me.name = {
             en: 'Fireworks',
+            es: 'Fuegos artificiales',
             fr: 'Feux d\'artifice',
             ja: '花火',
             ko: '불꽃놀이',
