@@ -1,0 +1,125 @@
+.fireworks-marker {
+    margin-top: 40px;
+    padding: 10px;
+    border-radius: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    color: #fff;
+    cursor: pointer;
+}
+.fireworks-marker::before {
+    content: "";
+    display: block;
+    background: no-repeat center/20px 20px svg-load('fireworks.svg', fill: #fff);
+    width: 20px;
+    height: 20px;
+    float: left;
+    margin: 0 6px 0 0;
+}
+.fireworks-marker:hover {
+    background-color: rgba(51, 51, 51, 0.7);
+}
+.fireworks-ctrl {
+    height: 100%;
+    padding: 10px 0 9px 0;
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    color: #fff;
+    pointer-events: auto;
+}
+.fireworks-header {
+    width: 100%;
+    padding: 0 10px;
+    margin-bottom: 9px;
+    box-sizing: border-box;
+    display: table;
+}
+.fireworks-header > div {
+    height: 39px;
+    margin-bottom: 4px;
+    vertical-align: middle;
+    display: table-cell;
+}
+.fireworks-title {
+    line-height: 19.5px;
+    padding-right: 10px;
+    font-weight: bold;
+}
+.fireworks-expand-button {
+    width: 39px;
+    height: 39px;
+    transform: scaleX(-1);
+    border-radius: 10px;
+    box-shadow: 0 0 0 1px #777;
+    display: block;
+    background: no-repeat center/18px 18px svg-load('../node_modules/@fortawesome/fontawesome-free/svgs/solid/up-right-and-down-left-from-center.svg', fill: #fff);
+    cursor: pointer;
+}
+.expanded .fireworks-expand-button {
+    background: no-repeat center/18px 18px svg-load('../node_modules/@fortawesome/fontawesome-free/svgs/solid/down-left-and-up-right-to-center.svg', fill: #fff);
+}
+.fireworks-expand-button:hover {
+    background-color: rgba(51, 51, 51, 0.7);
+}
+.fireworks-body {
+    height: calc(100% - 48px);
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+.fireworks-content {
+    padding: 1px 10px;
+    overflow: hidden;
+}
+.fireworks-list {
+    display: none;
+}
+.fireworks-event {
+    width: 122px;
+    height: 39px;
+    padding: 0 6px;
+    border: 0;
+    border-radius: 10px;
+    box-shadow: 0 0 0 1px #777;
+    display: block;
+    color: #fff;
+    background-color: transparent;
+    cursor: pointer;
+}
+.fireworks-list .fireworks-event {
+    margin-top: 10px;
+}
+.fireworks-event:hover {
+    background-color: rgba(51, 51, 51, 0.7);
+}
+.fireworks-event::before {
+    content: "";
+    display: block;
+    background: no-repeat center/20px 20px svg-load('fireworks.svg', fill: #fff);
+    width: 20px;
+    height: 28px;
+    float: left;
+    margin: 0 6px 0 0;
+}
+.expanded .fireworks-list {
+    display: block;
+}
+.expanded .fireworks-event {
+    width: 100%;
+}
+.fireworks-event-label {
+    height: 28px;
+    font-size: 12px;
+    line-height: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+}
+.fireworks-footer {
+    margin-top: 4px;
+    text-align: right;
+}
+.expanded .fireworks-footer {
+    display: none;
+}

@@ -1,24 +1,51 @@
-import {THREE} from 'mini-tokyo-3d';
+import {Marker, THREE} from 'mini-tokyo-3d';
 import vertexShader from './vertex-shader.glsl';
 import fragmentShader from './fragment-shader.glsl';
 import fireworksSVG from './fireworks.svg';
+import './fireworks.css';
+
+// Fireworks event URL
+const FIRWORKS_URL = 'https://mini-tokyo.appspot.com/fireworks';
+
+// Data refresh interval (5 minutes)
+const DATA_INTERVAL = 300000;
+
+// Activity refresh interval (1 minute)
+const ACTIVITY_INTERVAL = 60000;
+
+// Fireworks refresh interval (100 msecs)
+const FIREWORKS_INTERVAL = 100;
 
 const {
     AdditiveBlending,
     BufferGeometry,
     DynamicDrawUsage,
     Float32BufferAttribute,
-    FloatType,
     Group,
     MathUtils,
     Points,
     RawShaderMaterial,
-    Texture,
+    CanvasTexture,
     Vector3
 } = THREE;
 
 function clamp(value, lower, upper) {
     return Math.min(Math.max(value, lower), upper);
+}
+
+function createElement(tagName, attributes, container) {
+    const element = document.createElement(tagName);
+
+    Object.assign(element, attributes);
+    if (container) {
+        container.appendChild(element);
+    }
+    return element;
+}
+
+function callAndSetInterval(fn, interval) {
+    fn();
+    return setInterval(fn, interval);
 }
 
 const friction = 0.998;
@@ -71,10 +98,7 @@ const getTexture = () => {
     /* gradation circle
     ------------------------ */
     drawRadialGradation(ctx, canvasRadius, canvas.width, canvas.height);
-    const texture = new Texture(canvas);
-    texture.type = FloatType;
-    texture.needsUpdate = true;
-    return texture;
+    return new CanvasTexture(canvas);
 };
 
 const canvasTexture = getTexture();
@@ -448,6 +472,9 @@ class BasicFireWorks {
                 offsetPos = new Vector3(position.array[i - 2], position.array[i - 1], p);
             }
         }
+        if (offsetPos === undefined) {
+            return;
+        }
         flowerPos.add(offsetPos);
         this.explode(flowerPos);
     }
@@ -669,6 +696,187 @@ class FireworksLayer {
 
 }
 
+class FireworksControl {
+
+    constructor(options) {
+        const me = this,
+            {lang, clock, eventHandler} = options;
+
+        me._lang = lang;
+        me._clock = clock;
+        me._dict = {
+            en: {
+                'title-line-1': 'Today\'s',
+                'title-line-2': 'festivals',
+                'to': ' - ',
+                'more': 'and $1 more'
+            },
+            es: {
+                'title-line-1': 'La fiesta',
+                'title-line-2': 'de hoy',
+                'to': ' - ',
+                'more': 'y $1 más'
+            },
+            fr: {
+                'title-line-1': 'Les fêtes',
+                'title-line-2': 'd\'aujourd\'hui',
+                'to': ' - ',
+                'more': 'et $1 autres'
+            },
+            ja: {
+                'title-line-1': '今日の',
+                'title-line-2': '花火大会',
+                'to': '〜',
+                'more': 'ほか$1件'
+            },
+            ko: {
+                'title-line-1': '오늘의',
+                'title-line-2': '불꽃놀이',
+                'to': ' - ',
+                'more': '외 $1개'
+            },
+            ne: {
+                'title-line-1': 'आजका',
+                'title-line-2': 'चाडपर्वहरू',
+                'to': ' - ',
+                'more': 'र 1 थप'
+            },
+            pt: {
+                'title-line-1': 'Os festivais',
+                'title-line-2': 'de hoje',
+                'to': ' - ',
+                'more': 'e mais $1'
+            },
+            th: {
+                'title-line-1': 'เทศกาล',
+                'title-line-2': 'วันนี้',
+                'to': ' - ',
+                'more': 'และอีก $1 รายการ'
+            },
+            'zh-Hans': {
+                'title-line-1': '今天的',
+                'title-line-2': '烟火大会',
+                'to': ' - ',
+                'more': '其他$1场'
+            },
+            'zh-Hant': {
+                'title-line-1': '今天的',
+                'title-line-2': '煙火大會',
+                'to': ' - ',
+                'more': '其他$1場'
+            }
+        };
+        me._eventHandler = eventHandler;
+    }
+
+    getDefaultPosition() {
+        return 'top-left';
+    }
+
+    onAdd(map) {
+        const me = this;
+
+        me._map = map;
+
+        me._container = document.createElement('div');
+        me._container.className = 'mapboxgl-ctrl ctrl-group';
+        me._container.style.display = 'none';
+
+        me._element = document.createElement('div');
+        me._element.className = 'fireworks-ctrl';
+        me._container.appendChild(me._element);
+
+        return me._container;
+    }
+
+    onRemove() {
+        const me = this;
+
+        me._container.parentNode.removeChild(me._container);
+        delete me._container;
+        delete me._map;
+    }
+
+    refresh(events) {
+        const me = this,
+            dict = me._dict[me._lang] || me._dict.en,
+            container = me._container,
+            element = me._element,
+            baseTime = me._clock.getTime('03:00'),
+            now = me._clock.getTime(),
+            ids = Object.keys(events).filter(id => {
+                const {start, end} = events[id];
+                return start >= baseTime && start < baseTime + 86400000 && end > now;
+            }),
+            height = () => container.classList.contains('expanded') ?
+                `min(${ids.length * 49 + 40}px, calc(100dvh - ${container.getBoundingClientRect().top + 56}px))` :
+                '';
+
+        if (ids.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'block';
+        element.innerHTML = [
+            '<div class="fireworks-header">',
+            '<div class="fireworks-title">',
+            dict['title-line-1'],
+            '<br>',
+            dict['title-line-2'],
+            '</div>',
+            '<div id="fireworks-expand-button" class="fireworks-expand-button">',
+            '</div>',
+            '</div>',
+            '<div class="fireworks-body">',
+            '<div class="fireworks-content">',
+            `<button id="fireworks-${ids[0]}" class="fireworks-event">`,
+            '<div class="fireworks-event-label">',
+            events[ids[0]].name[me._lang] || events[ids[0]].name.en,
+            '<br>',
+            me._clock.getTimeString(events[ids[0]].start),
+            dict['to'],
+            '</div>',
+            '</button>',
+            '<div class="fireworks-list">',
+            ...ids.slice(1).map(id => [
+                `<button id="fireworks-${id}" class="fireworks-event">`,
+                '<div class="fireworks-event-label">',
+                events[id].name[me._lang] || events[id].name.en,
+                '<br>',
+                me._clock.getTimeString(events[id].start),
+                dict['to'],
+                '</div>',
+                '</button>'
+            ].join('')),
+            '</div>',
+            ids.length > 1 ? [
+                '<div class="fireworks-footer">',
+                dict['more'].replace('$1', ids.length - 1),
+                '</div>'
+            ].join('') : '',
+            '</div>',
+            '</div>'
+        ].join('');
+
+        container.style.height = height();
+
+        document.getElementById('fireworks-expand-button').addEventListener('click', () => {
+            container.classList.toggle('expanded');
+            container.style.height = height();
+        });
+
+        for (const id of ids) {
+            document.getElementById(`fireworks-${id}`).addEventListener('click', () => {
+                container.classList.remove('expanded');
+                container.style.height = height();
+                me._eventHandler({id});
+            });
+        }
+    }
+
+}
+
 class FireworksPlugin {
 
     constructor() {
@@ -693,70 +901,18 @@ class FireworksPlugin {
         };
         me.viewModes = ['ground'];
         me.layer = new FireworksLayer({id: me.id});
-        me.plans = [{
-            // Sumidagawa 1 (2020-07-23 19:00 to 20:30)
-            coord: [139.8061467, 35.7168468],
-            start: 1595498400000,
-            end: 1595503800000
-        }, {
-            // Sumidagawa 2 (2020-07-23 19:30 to 20:30)
-            coord: [139.7957901, 35.7053016],
-            start: 1595500200000,
-            end: 1595503800000
-        }, {
-            // Adachi (2020-07-24 19:30 to 20:30)
-            coord: [139.7960082, 35.7596802],
-            start: 1595586600000,
-            end: 1595590200000
-        }, {
-            // Makuhari (2020-07-25 19:10 to 20:20)
-            coord: [140.0265839, 35.6429351],
-            start: 1595671800000,
-            end: 1595676000000
-        }, {
-            // Minatomirai (2020-07-26 19:30 to 19:55)
-            coord: [139.6411158, 35.4606603],
-            start: 1595759400000,
-            end: 1595760900000
-        }, {
-            // Jingu (2020-08-08 19:30 to 20:30)
-            coord: [139.7186873, 35.6765851],
-            start: 1596882600000,
-            end: 1596886200000
-        }, {
-            // Edogawa (2020-08-09 19:15 to 20:30)
-            coord: [139.9028813, 35.7187124],
-            start: 1596968100000,
-            end: 1596972600000
-        }, {
-            // Itabashi (2020-08-10 19:00 to 20:30)
-            coord: [139.6759402, 35.7988664],
-            start: 1597053600000,
-            end: 1597059000000
-        }, {
-            // Olympic Opening (2021-07-23 20:00 to 23:00)
-            coord: [139.7161639, 35.6759322],
-            start: 1627038000000,
-            end: 1627048800000
-        }, {
-            // Olympic Closing (2021-08-08 20:00 to 23:00)
-            coord: [139.7161639, 35.6759322],
-            start: 1628420400000,
-            end: 1628431200000
-        }, {
-            // Disney Light the Night (Everyday 20:00 to 20:05)
-            coord: [139.8848537, 35.6307327],
-            start: 39600000,
-            end: 39900000,
-            daily: true
-        }];
+        me.events = {};
+        me.activeEvents = {};
     }
 
     onAdd(map) {
-        const me = this;
+        const me = this,
+            {lang, clock} = me.map = map;
 
-        me.map = map;
         map.addLayer(me.layer);
+        me.fireworksCtrl = new FireworksControl({lang, clock, eventHandler: ({id}) => {
+            map.flyTo({center: me.events[id].center, zoom: 15, pitch: 60});
+        }});
     }
 
     onRemove(map) {
@@ -766,26 +922,126 @@ class FireworksPlugin {
     onEnabled() {
         const me = this;
 
-        me.interval = setInterval(() => {
+        me.map.getMapboxMap().addControl(me.fireworksCtrl);
+
+        me.dataInterval = callAndSetInterval(() => {
+            fetch(FIRWORKS_URL)
+                .then(response => response.json())
+                .then(data => {
+                    me._updateEvents(data);
+                    me._updateActiveEvents();
+                    me.fireworksCtrl.refresh(me.events);
+                });
+        }, DATA_INTERVAL);
+
+        const repeat = () => {
             const now = me.map.clock.getTime();
 
-            me.plans.forEach((plan, index) => {
-                if ((plan.daily && now % 86400000 >= plan.start && now % 86400000 < plan.end ||
-                    !plan.daily && now >= plan.start && now < plan.end) && Math.random() > 0.7) {
-                    me.layer.launchFireWorks(index, plan.coord);
+            if (Math.floor(now / ACTIVITY_INTERVAL) !== Math.floor(me._lastActivityRefresh / ACTIVITY_INTERVAL)) {
+                me._updateActiveEvents();
+                me.fireworksCtrl.refresh(me.events);
+                me._lastActivityRefresh = now;
+            }
+            me._frameRequestID = requestAnimationFrame(repeat);
+        };
+
+        repeat();
+
+        me.interval = callAndSetInterval(() => {
+            if (me.visible) {
+                const activeEvents = me.activeEvents;
+
+                for (const id of Object.keys(activeEvents)) {
+                    if (Math.random() > 0.7) {
+                        me.layer.launchFireWorks(id, activeEvents[id].center);
+                    }
                 }
-            });
-        }, 100);
+            }
+        }, FIREWORKS_INTERVAL);
     }
 
     onDisabled() {
-        clearInterval(this.interval);
+        const me = this;
+
+        clearInterval(me.dataInterval);
+        cancelAnimationFrame(me._frameRequestID);
+        delete me._lastActivityRefresh;
+        clearInterval(me.interval);
+
+        me._updateEvents([]);
+
+        me.map.getMapboxMap().removeControl(me.fireworksCtrl);
     }
 
     onVisibilityChanged(visible) {
-        const me = this;
+        const me = this,
+            {map, activeEvents} = me;
 
-        me.map.setLayerVisibility(me.id, visible ? 'visible' : 'none');
+        me.visible = visible;
+
+        for (const id of Object.keys(activeEvents)) {
+            activeEvents[id].marker.setVisibility(visible);
+        }
+        map.setLayerVisibility(me.id, visible ? 'visible' : 'none');
+    }
+
+    _updateEvents(data) {
+        const me = this,
+            {map, events, activeEvents} = me;
+
+        for (const item of data) {
+            const id = item.id,
+                event = events[id];
+
+            if (event) {
+                event.marker.setLngLat(item.center);
+                event.updated = true;
+                continue;
+            }
+
+            const element = createElement('div', {
+                    className: 'fireworks-marker',
+                    innerHTML: item.name[map.lang] || item.name.en
+                }),
+                marker = new Marker({element})
+                    .setLngLat(item.center)
+                    .addTo(map)
+                    .setVisibility(false)
+                    .on('click', () => {
+                        map.flyTo({center: events[id].center, zoom: 15, pitch: 60});
+                    });
+
+            events[id] = Object.assign({marker, updated: true}, item);
+        }
+
+        for (const id of Object.keys(events)) {
+            if (events[id].updated) {
+                delete events[id].updated;
+            } else {
+                events[id].marker.remove();
+                delete events[id];
+                delete activeEvents[id];
+            }
+        }
+    }
+
+    _updateActiveEvents() {
+        const me = this,
+            {events, activeEvents} = me,
+            now = me.map.clock.getTime();
+
+        for (const id of Object.keys(events)) {
+            const event = events[id],
+                isActive = now >= event.start && now < event.end;
+
+            if (isActive && !activeEvents[id]) {
+                activeEvents[id] = event;
+                event.marker.setVisibility(me.visible);
+            } else if (!isActive && activeEvents[id]) {
+                delete activeEvents[id];
+                event.marker.setVisibility(false);
+            }
+        }
     }
 
 }

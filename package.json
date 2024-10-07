@@ -16,7 +16,9 @@
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-jsdoc": "^41.1.1",
     "mini-tokyo-3d": "^3.3.0",
-    "rollup": "^3.20.2"
+    "postcss-inline-svg": "^6.0.0",
+    "rollup": "^3.20.2",
+    "rollup-plugin-postcss": "^4.0.2"
   },
   "peerDependencies": {
     "mini-tokyo-3d": "^3.3.0"
