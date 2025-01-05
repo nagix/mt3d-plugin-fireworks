@@ -705,6 +705,12 @@ class FireworksControl {
         me._lang = lang;
         me._clock = clock;
         me._dict = {
+            de: {
+                'title-line-1': 'Die heutigen',
+                'title-line-2': 'Feste',
+                'to': ' - ',
+                'more': 'und $1 weitere'
+            },
             en: {
                 'title-line-1': 'Today\'s',
                 'title-line-2': 'festivals',
@@ -884,6 +890,7 @@ class FireworksPlugin {
 
         me.id = 'fireworks';
         me.name = {
+            de: 'Feuerwerk',
             en: 'Fireworks',
             es: 'Fuegos artificiales',
             fr: 'Feux d\'artifice',
