@@ -153,17 +153,17 @@ const getPointMesh = (num, vels, type) => {
                 colors.push(multipleColor(), multipleColor(), multipleColor(), 1.0);
             } else {
                 switch (rgbType) {
-                case 'red':
-                    colors.push(singleColor, 0.1, 0.1, 1.0);
-                    break;
-                case 'green':
-                    colors.push(0.1, singleColor, 0.1, 1.0);
-                    break;
-                case 'blue':
-                    colors.push(0.1, 0.1, singleColor, 1.0);
-                    break;
-                default:
-                    colors.push(singleColor, 0.1, 0.1, 1.0);
+                    case 'red':
+                        colors.push(singleColor, 0.1, 0.1, 1.0);
+                        break;
+                    case 'green':
+                        colors.push(0.1, singleColor, 0.1, 1.0);
+                        break;
+                    case 'blue':
+                        colors.push(0.1, 0.1, singleColor, 1.0);
+                        break;
+                    default:
+                        colors.push(singleColor, 0.1, 0.1, 1.0);
                 }
             }
         }
@@ -441,7 +441,6 @@ class BasicFireWorks {
         this.seed.update(this.gravity, frameRateFactor);
         const {position, velocity} = this.seed.mesh.geometry.attributes;
         let count = 0;
-        let isComplete = true;
 
         // Check if the y-axis speed is down for all particles
         for (let i = 0, l = velocity.array.length; i < l; i++) {
@@ -453,8 +452,7 @@ class BasicFireWorks {
             }
         }
 
-        isComplete = count === 0;
-        if (!isComplete) {
+        if (count !== 0) {
             return;
         }
 
