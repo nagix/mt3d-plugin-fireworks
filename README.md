@@ -36,6 +36,11 @@ npm install
 npm run build
 ```
 
+For development, the following command watches the source files and outputs an unminified build with source maps to the `dev` directory. To debug it against Mini Tokyo 3D, set the `MT3D_PLUGIN_FIREWORKS` environment variable to the built file (`dev/mt3d-plugin-fireworks.js`) and run Mini Tokyo 3D's `npm run dev`, which loads and serves the plugin live on its development page.
+```bash
+npm run dev
+```
+
 ## License
 
 Fireworks plugin for Mini Tokyo 3D is available under the [MIT license](https://opensource.org/licenses/MIT).
