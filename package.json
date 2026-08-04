@@ -30,7 +30,6 @@
     "lint": "eslint --cache ."
   },
   "files": [
-    "build/",
     "dist/mt3d-plugin-fireworks.*",
     "src/"
   ],
