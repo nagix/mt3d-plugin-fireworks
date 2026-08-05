@@ -16,12 +16,12 @@ First, load the Mini Tokyo 3D and this plugin within the `<head>` element of the
 <script src="https://cdn.jsdelivr.net/npm/mt3d-plugin-fireworks@latest/dist/mt3d-plugin-fireworks.min.js"></script>
 ```
 
-Then, create a MiniTokyo3D instance specifying the `plugins` property, which is the array containing the plugin instance returned by `mt3dFireworks()`.
+Then, create a Map instance specifying the `plugins` property, which is the array containing the plugin instance returned by `mt3dFireworks()`.
 
 ```html
 <div id="map" style="width: 400px; height: 400px;"></div>
 <script>
-    const map = new mt3d.MiniTokyo3D({
+    const map = new mt3d.Map({
         container: 'map',
         plugins: [mt3dFireworks()]
     });
