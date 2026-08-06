@@ -2,8 +2,29 @@
   "name": "mt3d-plugin-fireworks",
   "version": "1.4.0",
   "description": "Fireworks plugin for Mini Tokyo 3D",
+  "homepage": "https://minitokyo3d.com",
+  "bugs": {
+    "url": "https://github.com/nagix/mt3d-plugin-fireworks/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nagix/mt3d-plugin-fireworks.git"
+  },
+  "license": "MIT",
+  "author": "Akihiko Kusanagi",
   "main": "dist/mt3d-plugin-fireworks.cjs",
+  "jsdelivr": "dist/mt3d-plugin-fireworks.min.js",
+  "unpkg": "dist/mt3d-plugin-fireworks.min.js",
   "module": "dist/mt3d-plugin-fireworks.esm.js",
+  "files": [
+    "dist/mt3d-plugin-fireworks.*",
+    "src/"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c rollup.config.dev.mjs -w",
+    "lint": "eslint --cache . && sort-package-json --check"
+  },
   "devDependencies": {
     "@eslint/compat": "^2.1.0",
     "@fortawesome/fontawesome-free": "^7.3.1",
@@ -20,30 +41,10 @@
     "mini-tokyo-3d": "^3.6.0",
     "postcss-inline-svg": "^6.0.0",
     "rollup": "^4.29.2",
-    "rollup-plugin-postcss": "^4.0.2"
+    "rollup-plugin-postcss": "^4.0.2",
+    "sort-package-json": "^4.0.0"
   },
   "peerDependencies": {
     "mini-tokyo-3d": "^3.6.0"
-  },
-  "scripts": {
-    "build": "rollup -c",
-    "dev": "rollup -c rollup.config.dev.mjs -w",
-    "lint": "eslint --cache ."
-  },
-  "files": [
-    "dist/mt3d-plugin-fireworks.*",
-    "src/"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nagix/mt3d-plugin-fireworks.git"
-  },
-  "author": "Akihiko Kusanagi",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/nagix/mt3d-plugin-fireworks/issues"
-  },
-  "homepage": "https://minitokyo3d.com",
-  "jsdelivr": "dist/mt3d-plugin-fireworks.min.js",
-  "unpkg": "dist/mt3d-plugin-fireworks.min.js"
+  }
 }
