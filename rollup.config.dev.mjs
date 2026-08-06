@@ -55,7 +55,7 @@ export default [{
         }),
         postcss({
             plugins: [
-                inlinesvg()
+                inlinesvg({removeFill: true})
             ]
         }),
         commonjs(),
