@@ -1159,8 +1159,6 @@ class FireworksPlugin {
                 }),
                 marker = new Marker({element})
                     .setLngLat(item.center)
-                    .addTo(map)
-                    .setVisibility(false)
                     .on('click', () => {
                         map.flyTo({center: events[id].center, zoom: 15, pitch: 60});
                     });
@@ -1169,12 +1167,14 @@ class FireworksPlugin {
         }
 
         for (const id of Object.keys(events)) {
-            if (events[id].updated) {
-                delete events[id].updated;
+            const event = events[id];
+
+            if (event.updated) {
+                delete event.updated;
             } else {
-                events[id].marker.remove();
-                delete events[id];
+                event.marker.remove();
                 delete activeEvents[id];
+                delete events[id];
             }
         }
     }
@@ -1190,10 +1190,10 @@ class FireworksPlugin {
 
             if (isActive && !activeEvents[id]) {
                 activeEvents[id] = event;
-                event.marker.setVisibility(me.visible);
+                event.marker.addTo(me.map).setVisibility(me.visible);
             } else if (!isActive && activeEvents[id]) {
                 delete activeEvents[id];
-                event.marker.setVisibility(false);
+                event.marker.remove();
             }
         }
     }
