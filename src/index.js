@@ -8,8 +8,8 @@ import bloomCompositeFragmentShader from './bloom-composite-fragment.glsl';
 import fireworksSVG from './fireworks.svg';
 import './fireworks.css';
 
-// Fireworks event URL
-const FIRWORKS_URL = 'https://mini-tokyo.appspot.com/fireworks';
+// Default fireworks event data source URL
+const FIREWORKS_URL = 'https://mini-tokyo.appspot.com/fireworks';
 
 // Data refresh interval (5 minutes)
 const DATA_INTERVAL = 300000;
@@ -1032,9 +1032,10 @@ class FireworksControl {
 
 class FireworksPlugin {
 
-    constructor() {
+    constructor(options) {
         const me = this;
 
+        me.options = Object.assign({url: FIREWORKS_URL}, options);
         me.id = 'fireworks';
         me.name = {
             de: 'Feuerwerk',
@@ -1079,7 +1080,7 @@ class FireworksPlugin {
         me.map.getMapboxMap().addControl(me.fireworksCtrl);
 
         me.dataInterval = callAndSetInterval(() => {
-            fetch(FIRWORKS_URL)
+            fetch(me.options.url)
                 .then(response => response.json())
                 .then(data => {
                     me._updateEvents(data);
@@ -1200,6 +1201,6 @@ class FireworksPlugin {
 
 }
 
-export default function() {
-    return new FireworksPlugin();
+export default function(options) {
+    return new FireworksPlugin(options);
 }

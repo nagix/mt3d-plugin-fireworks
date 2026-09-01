@@ -28,6 +28,14 @@ Then, create a Map instance specifying the `plugins` property, which is the arra
 </script>
 ```
 
+## Options
+
+The plugin accepts the following options.
+
+| Name | Type | Default | Description
+| :-- | :-- | :-- | :--
+| **`options.url`** | `string` | `'https://mini-tokyo.appspot.com/fireworks'` | The URL of the fireworks event data source. Override this to use your own endpoint instead of the default hosted data.
+
 ## How to Build
 
 The latest version of Node.js is required. Move to the root directory of the plugin, run the following commands, then the plugin scripts will be generated in the `dist` directory.
