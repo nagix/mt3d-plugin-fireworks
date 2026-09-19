@@ -20,6 +20,9 @@ const ACTIVITY_INTERVAL = 60000;
 // Fireworks refresh interval (100 msecs)
 const FIREWORKS_INTERVAL = 100;
 
+// Pixel offset of the event marker below its anchor point.
+const MARKER_OFFSET = [0, 20];
+
 const {
     AdditiveBlending,
     BufferAttribute,
@@ -46,6 +49,21 @@ const MAX = 150000;
 
 // Maximum number of shells rising at once per event (limits burst density). TUNE.
 const MAX_SHELLS_PER_EVENT = 3;
+
+// Horizontal spread (meters) of the random shell launch points around an event
+// center. Also used as the launch area's hover/click radius. TUNE.
+const LAUNCH_SPREAD = 200;
+
+const EARTH_RADIUS = 6371000; // meters
+
+const LAUNCH_AREA_SOURCE = 'fireworks-launch-areas';
+const LAUNCH_AREA_FILL_LAYER = 'fireworks-launch-areas-fill';
+const LAUNCH_AREA_GLOW_LAYER = 'fireworks-launch-areas-glow';
+const LAUNCH_AREA_BORDER_LAYER = 'fireworks-launch-areas-border';
+const LAUNCH_AREA_LAYERS = [LAUNCH_AREA_FILL_LAYER, LAUNCH_AREA_GLOW_LAYER, LAUNCH_AREA_BORDER_LAYER];
+
+const LAUNCH_AREA_COLOR = '#ffb454';
+const LAUNCH_AREA_BORDER_COLOR = '#ffe6bf';
 
 // Reference gravity (world units / s^2) for the analytic trajectory.
 const G = 22;
@@ -402,7 +420,9 @@ class FireworksLayer {
 
     // --- Shells -----------------------------------------------------------
 
-    launchFireWorks(key, lngLat) {
+    // `exact`: launch straight from `lngLat` with no random scatter, ignoring
+    // the per-event shell cap, so a deliberate click always fires.
+    launchFireWorks(key, lngLat, exact) {
         const me = this,
             {map} = me;
 
@@ -412,22 +432,25 @@ class FireworksLayer {
         }
 
         // Limit the number of shells in flight per event.
-        let count = 0;
+        if (!exact) {
+            let count = 0;
 
-        for (const shell of me._shells) {
-            if (shell.eventId === key) {
-                count++;
+            for (const shell of me._shells) {
+                if (shell.eventId === key) {
+                    count++;
+                }
             }
-        }
-        if (count >= MAX_SHELLS_PER_EVENT) {
-            return;
+            if (count >= MAX_SHELLS_PER_EVENT) {
+                return;
+            }
         }
 
         const modelPosition = map.getModelPosition(lngLat),
             modelScale = map.getModelScale(),
+            spread = exact ? 0 : LAUNCH_SPREAD,
             origin = new Vector3(
-                modelPosition.x + (Math.random() * 400 - 200) * modelScale,
-                modelPosition.y + (Math.random() * 400 - 200) * modelScale,
+                modelPosition.x + (Math.random() * 2 - 1) * spread * modelScale,
+                modelPosition.y + (Math.random() * 2 - 1) * spread * modelScale,
                 modelPosition.z
             );
 
@@ -1030,12 +1053,56 @@ class FireworksControl {
 
 }
 
+function toRadians(deg) {
+    return deg * Math.PI / 180;
+}
+
+function toDegrees(rad) {
+    return rad * 180 / Math.PI;
+}
+
+// Approximates a circle (radius in meters) around a [lng, lat] center as a
+// closed ring of points, for use as GeoJSON polygon coordinates.
+function circlePoints(center, radiusMeters, steps = 64) {
+    const [lng, lat] = center,
+        latRad = toRadians(lat),
+        lngRad = toRadians(lng),
+        angularDistance = radiusMeters / EARTH_RADIUS,
+        ring = [];
+
+    for (let i = 0; i <= steps; i++) {
+        const bearing = i / steps * TAU,
+            lat2 = Math.asin(
+                Math.sin(latRad) * Math.cos(angularDistance) +
+                Math.cos(latRad) * Math.sin(angularDistance) * Math.cos(bearing)
+            ),
+            lng2 = lngRad + Math.atan2(
+                Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(latRad),
+                Math.cos(angularDistance) - Math.sin(latRad) * Math.sin(lat2)
+            );
+
+        ring.push([toDegrees(lng2), toDegrees(lat2)]);
+    }
+    return ring;
+}
+
+function launchAreaFeature(id, event) {
+    return {
+        type: 'Feature',
+        properties: {launchId: id},
+        geometry: {
+            type: 'Polygon',
+            coordinates: [circlePoints(event.center, LAUNCH_SPREAD)]
+        }
+    };
+}
+
 class FireworksPlugin {
 
     constructor(options) {
         const me = this;
 
-        me.options = Object.assign({url: FIREWORKS_URL}, options);
+        me.options = Object.assign({url: FIREWORKS_URL, interactive: true}, options);
         me.id = 'fireworks';
         me.name = {
             de: 'Feuerwerk',
@@ -1079,6 +1146,16 @@ class FireworksPlugin {
 
         me.map.getMapboxMap().addControl(me.fireworksCtrl);
 
+        if (me.options.interactive) {
+            me._addLaunchAreas();
+            me._onClick = ({lngLat}) => me._launchAtClick(lngLat);
+            me._onMouseMove = ({lngLat}) => me._updateHover(lngLat);
+            me._onMouseOut = () => me._updateHover();
+            me.map.on('click', me._onClick);
+            me.map.on('mousemove', me._onMouseMove);
+            me.map.on('mouseout', me._onMouseOut);
+        }
+
         me.dataInterval = callAndSetInterval(() => {
             fetch(me.options.url)
                 .then(response => response.json())
@@ -1118,6 +1195,17 @@ class FireworksPlugin {
     onDisabled() {
         const me = this;
 
+        if (me._onClick) {
+            me.map.off('click', me._onClick);
+            me.map.off('mousemove', me._onMouseMove);
+            me.map.off('mouseout', me._onMouseOut);
+            delete me._onClick;
+            delete me._onMouseMove;
+            delete me._onMouseOut;
+            me._setHover(null);
+            me._removeLaunchAreas();
+        }
+
         clearInterval(me.dataInterval);
         cancelAnimationFrame(me._frameRequestID);
         delete me._lastActivityRefresh;
@@ -1137,7 +1225,172 @@ class FireworksPlugin {
         for (const id of Object.keys(activeEvents)) {
             activeEvents[id].marker.setVisibility(visible);
         }
+        if (me._areasAdded) {
+            for (const layerId of LAUNCH_AREA_LAYERS) {
+                map.setLayerVisibility(layerId, visible ? 'visible' : 'none');
+            }
+            if (!visible) {
+                me._setHover(null);
+            }
+        }
         map.setLayerVisibility(me.id, visible ? 'visible' : 'none');
+    }
+
+    _addLaunchAreas() {
+        const me = this,
+            mapboxMap = me.map.getMapboxMap();
+
+        mapboxMap.addSource(LAUNCH_AREA_SOURCE, {
+            type: 'geojson',
+            // promoteId: string feature ids need a properties field rather
+            // than the GeoJSON top-level `id` to key feature-state reliably.
+            promoteId: 'launchId',
+            data: {type: 'FeatureCollection', features: []}
+        });
+
+        me.map.addLayer({
+            id: LAUNCH_AREA_FILL_LAYER,
+            type: 'fill',
+            source: LAUNCH_AREA_SOURCE,
+            paint: {
+                'fill-color': LAUNCH_AREA_COLOR,
+                'fill-opacity': ['case', ['boolean', ['feature-state', 'hovered'], false], 0.06, 0],
+                // Render at full brightness regardless of the scene's night-time
+                // lighting, like a self-lit UI overlay rather than a lit surface.
+                'fill-emissive-strength': 1
+            }
+        });
+        me.map.addLayer({
+            id: LAUNCH_AREA_GLOW_LAYER,
+            type: 'line',
+            source: LAUNCH_AREA_SOURCE,
+            paint: {
+                'line-color': LAUNCH_AREA_COLOR,
+                // ["coalesce", ["get", ""], N] instead of a plain N: a bare
+                // constant for line-width triggers a mapbox-gl rendering bug.
+                'line-width': ['coalesce', ['get', ''], 16],
+                'line-blur': 12,
+                'line-opacity': ['case', ['boolean', ['feature-state', 'hovered'], false], 0.2, 0],
+                'line-emissive-strength': 1
+            }
+        });
+        me.map.addLayer({
+            id: LAUNCH_AREA_BORDER_LAYER,
+            type: 'line',
+            source: LAUNCH_AREA_SOURCE,
+            paint: {
+                'line-color': LAUNCH_AREA_BORDER_COLOR,
+                'line-width': ['coalesce', ['get', ''], 2],
+                'line-opacity': ['case', ['boolean', ['feature-state', 'hovered'], false], 0.4, 0],
+                'line-emissive-strength': 1
+            }
+        });
+
+        me._areasAdded = true;
+        me._refreshLaunchAreas();
+    }
+
+    _removeLaunchAreas() {
+        const me = this;
+
+        if (!me._areasAdded) {
+            return;
+        }
+        for (const layerId of LAUNCH_AREA_LAYERS) {
+            me.map.removeLayer(layerId);
+        }
+        me.map.getMapboxMap().removeSource(LAUNCH_AREA_SOURCE);
+        me._areasAdded = false;
+    }
+
+    _refreshLaunchAreas() {
+        const me = this,
+            {activeEvents} = me;
+
+        if (!me._areasAdded) {
+            return;
+        }
+
+        const features = Object.keys(activeEvents).map(id => launchAreaFeature(id, activeEvents[id]));
+
+        me.map.getMapboxMap().getSource(LAUNCH_AREA_SOURCE).setData({type: 'FeatureCollection', features});
+        if (me._hoveredEventId && !activeEvents[me._hoveredEventId]) {
+            me._setHover(null);
+        }
+    }
+
+    // Shared by click-to-launch and the hover highlight.
+    _eventAtLngLat(lngLat) {
+        const me = this,
+            {map, activeEvents} = me,
+            point = map.getModelPosition(lngLat),
+            scale = map.getModelScale();
+
+        for (const id of Object.keys(activeEvents)) {
+            const center = map.getModelPosition(activeEvents[id].center),
+                dx = (point.x - center.x) / scale,
+                dy = (point.y - center.y) / scale;
+
+            if (dx * dx + dy * dy <= LAUNCH_SPREAD * LAUNCH_SPREAD) {
+                return id;
+            }
+        }
+        return null;
+    }
+
+    _launchAtClick(lngLat) {
+        const me = this;
+
+        if (!me.visible) {
+            return;
+        }
+
+        const id = me._eventAtLngLat(lngLat);
+
+        if (id) {
+            me.layer.launchFireWorks(id, lngLat, true);
+        }
+    }
+
+    // Called with no argument when the cursor leaves the map.
+    _updateHover(lngLat) {
+        const me = this;
+
+        me._setHover(me.visible && lngLat ? me._eventAtLngLat(lngLat) : null);
+    }
+
+    _setHover(id) {
+        const me = this,
+            previous = me._hoveredEventId || null;
+
+        if (id === previous) {
+            return;
+        }
+
+        const mapboxMap = me.map.getMapboxMap(),
+            doubleClickZoom = mapboxMap.doubleClickZoom;
+
+        if (previous) {
+            mapboxMap.setFeatureState({source: LAUNCH_AREA_SOURCE, id: previous}, {hovered: false});
+        }
+        if (id) {
+            mapboxMap.setFeatureState({source: LAUNCH_AREA_SOURCE, id}, {hovered: true});
+        }
+        mapboxMap.getCanvas().style.cursor = id ? 'pointer' : '';
+
+        // Suppress double-click-zoom over a launch area. Restores the prior
+        // state rather than force-enabling, since other code (e.g. mini-tokyo-3d
+        // while tracking a vehicle) may also disable this same handler.
+        if (id && !previous) {
+            me._dblClickZoomWasEnabled = doubleClickZoom.isEnabled();
+            if (me._dblClickZoomWasEnabled) {
+                doubleClickZoom.disable();
+            }
+        } else if (!id && previous && me._dblClickZoomWasEnabled) {
+            doubleClickZoom.enable();
+        }
+
+        me._hoveredEventId = id;
     }
 
     _updateEvents(data) {
@@ -1158,7 +1411,7 @@ class FireworksPlugin {
                     className: 'fireworks-marker',
                     innerHTML: item.name[map.lang] || item.name.en
                 }),
-                marker = new Marker({element})
+                marker = new Marker({element, offset: MARKER_OFFSET})
                     .setLngLat(item.center)
                     .on('click', () => {
                         map.flyTo({center: events[id].center, zoom: 15, pitch: 60});
@@ -1184,6 +1437,7 @@ class FireworksPlugin {
         const me = this,
             {events, activeEvents} = me,
             now = me.map.clock.getTime();
+        let changed = false;
 
         for (const id of Object.keys(events)) {
             const event = events[id],
@@ -1192,10 +1446,15 @@ class FireworksPlugin {
             if (isActive && !activeEvents[id]) {
                 activeEvents[id] = event;
                 event.marker.addTo(me.map).setVisibility(me.visible);
+                changed = true;
             } else if (!isActive && activeEvents[id]) {
                 delete activeEvents[id];
                 event.marker.remove();
+                changed = true;
             }
+        }
+        if (changed) {
+            me._refreshLaunchAreas();
         }
     }
 

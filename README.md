@@ -35,6 +35,7 @@ The plugin accepts the following options.
 | Name | Type | Default | Description
 | :-- | :-- | :-- | :--
 | **`options.url`** | `string` | `'https://mini-tokyo.appspot.com/fireworks'` | The URL of the fireworks event data source. Override this to use your own endpoint instead of the default hosted data.
+| **`options.interactive`** | `boolean` | `true` | If `true`, the launch area of an ongoing event is highlighted on hover, and clicking within it shoots a shell up from the clicked point. Set to `false` to disable this.
 
 ## How to Build
 
