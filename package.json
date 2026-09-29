@@ -1,6 +1,6 @@
 {
   "name": "mt3d-plugin-fireworks",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Fireworks plugin for Mini Tokyo 3D",
   "homepage": "https://minitokyo3d.com",
   "bugs": {
@@ -27,7 +27,7 @@
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "@eslint/compat": "^2.1.0",
+    "@eslint/compat": "^2.1.1",
     "@fortawesome/fontawesome-free": "^7.3.1",
     "@rollup/plugin-commonjs": "^29.0.3",
     "@rollup/plugin-image": "^3.0.3",
@@ -35,17 +35,18 @@
     "@rollup/plugin-strip": "^3.0.4",
     "@rollup/plugin-terser": "^1.0.0",
     "@rollup/pluginutils": "^5.4.0",
-    "eslint": "^10.8.1",
+    "eslint": "^10.11.0",
     "eslint-config-mourner": "^5.0.1",
     "eslint-plugin-import-x": "^4.17.1",
-    "eslint-plugin-jsdoc": "^64.1.0",
-    "mini-tokyo-3d": "^4.0.0",
+    "eslint-plugin-jsdoc": "^65.0.0",
+    "mini-tokyo-3d": "^4.1.0",
+    "postcss": "^8.5.28",
     "postcss-inline-svg": "^6.0.0",
-    "rollup": "^4.62.4",
+    "rollup": "^4.63.5",
     "rollup-plugin-postcss": "^4.0.2",
     "sort-package-json": "^4.0.0"
   },
   "peerDependencies": {
-    "mini-tokyo-3d": "^4.0.0"
+    "mini-tokyo-3d": "^4.1.0"
   }
 }
